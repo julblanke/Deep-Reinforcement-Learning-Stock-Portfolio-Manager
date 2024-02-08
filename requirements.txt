@@ -1,0 +1,12 @@
+tensorflow
+typer
+torch
+stable_baselines3
+yfinance
+streamlit
+pandas
+numpy
+gymnasium
+matplotlib
+pillow
+tqdm
