@@ -1,3 +1,4 @@
+import os
 import logging
 import pandas as pd
 from tqdm import tqdm
@@ -32,6 +33,8 @@ class Dataloader:
         Returns:
             conc_df (pd.DataFrame): Concatenated dataframe consisting of Open, High, Low and Close values of stocks
         """
+        os.makedirs("./drlpm/data/stocks", exist_ok=True)
+
         conc_df = pd.DataFrame()
         for stock in tqdm(self.stock_symbols):
             if self.update_data:
