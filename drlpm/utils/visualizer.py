@@ -36,7 +36,8 @@ class Visualizer:
 
     def create_graphs(self) -> None:
         """Calls class to create the different graphs. Resets output directory."""
-        shutil.rmtree("./streamlit/result_images")
+        if os.path.isdir("./streamlit/result_images"):
+            shutil.rmtree("./streamlit/result_images")
         os.makedirs("./streamlit/result_images/performance", exist_ok=True)
         os.makedirs("./streamlit/result_images/shares", exist_ok=True)
 
