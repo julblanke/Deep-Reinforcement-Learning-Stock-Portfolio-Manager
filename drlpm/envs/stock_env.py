@@ -32,7 +32,7 @@ class StockTradingEnv(gym.Env):
         """Constructor.
 
         Args:
-            data (pd.DataFrame): Concatenated dataframe consisting of Open, High, Low and Close values of stocks
+            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators
             stock_symbols (list(str)): Stock symbols of user defined stocks
             initial_balance (float): Initial account balance
         """
@@ -48,8 +48,8 @@ class StockTradingEnv(gym.Env):
         self.action_space = spaces.Box(low=np.zeros(2 * self.nr_stock_symbols),
                                        high=np.ones(2 * self.nr_stock_symbols),
                                        dtype=np.float16)
-        # NOTE: obs dim given by portfolio values (3) + positions per stock (nr_stocks) + data (4 * nr_stocks)
-        observation_dim = 3 + self.nr_stock_symbols + 4 * self.nr_stock_symbols
+        # NOTE: obs dim given by portfolio values (3) + positions per stock (nr_stocks) + data
+        observation_dim = 3 + self.nr_stock_symbols + data.shape[1]
         self.observation_space = spaces.Box(low=0, high=100000000, shape=(1, observation_dim))
 
         # initial values
