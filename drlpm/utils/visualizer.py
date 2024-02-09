@@ -12,7 +12,7 @@ class Visualizer:
         """Constructor.
 
         Args:
-            data (pd.DataFrame): Open, High, Low and Close - of given stocks with user defined period and interval
+            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators
             stock_symbols (list(str)): Stock symbols of user defined stocks
             model_info (list(dict)): Model info - contains data to visualize performance and share amount
         """
