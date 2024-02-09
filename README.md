@@ -87,8 +87,6 @@ The current version of the repository is in the early stages of development and 
 
 I am actively working on an advanced version of the portfolio manager that incorporates more sophisticated algorithms and improved learning capabilities. This advanced version aims to address the limitations of the current version and provide a more robust and reliable solution for managing stock trading portfolios using reinforcement learning techniques.
 
-At this time, I have not yet decided whether the advanced version will be made publicly available.
-
 Thank you for your interest in the project, and stay tuned for updates on its development progress and future releases.
 
 
