@@ -3,12 +3,14 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 
 import typer
+import logging
 import torch as th
 from typing import List
 from stable_baselines3 import PPO
-from drlpm.envs.stock_env import StockTradingEnv
-from drlpm.utils.dataloader import Dataloader
+from drlpm.utils.logger import Logger
 from drlpm.utils.visualizer import Visualizer
+from drlpm.envs.stock_env import StockTradingEnv
+from drlpm.data_processing.dataloader import Dataloader
 
 
 DEVICE = th.device("cuda" if th.cuda.is_available() else "cpu")
@@ -30,15 +32,21 @@ class DrlPortfolioManager:
             interval (str): Data points frequency -- in yfinance terms -- e.g. '1d'
             update_data (bool): Whether to update stock data
         """
+        Logger.initialize_logger()
+        logger = logging.getLogger()
+
         # load data and create environment
         data = (Dataloader(stock_symbols=stock_symbols,
                            period=period,
                            interval=interval,
                            update_data=update_data)
                 .get_data())
+        logger.info("Loading data finished.")
+
         env = StockTradingEnv(data=data,
                               stock_symbols=stock_symbols,
                               initial_balance=initial_balance)
+        logger.info("Created environment.")
 
         # create and train ppo model
         model = PPO('MlpPolicy',
@@ -47,6 +55,7 @@ class DrlPortfolioManager:
                     device=DEVICE,
                     tensorboard_log="./logs")
         model.learn(total_timesteps=train_timesteps)
+        logger.info("Finished training model.")
 
         vec_env = model.get_env()
         obs = vec_env.reset()
@@ -68,8 +77,9 @@ class DrlPortfolioManager:
                             stock_symbols=stock_symbols,
                             model_info=model_info)
                  .create_graphs())
+                logger.info("Created graphs.")
                 break
-
+        logger.info("Done!")
 
 def main(stock_symbols: List[str] = typer.Argument(..., help="Define stock symbols to be considered for portfolio."),
          initial_balance: float = typer.Option(..., help="Initial account balance."),
