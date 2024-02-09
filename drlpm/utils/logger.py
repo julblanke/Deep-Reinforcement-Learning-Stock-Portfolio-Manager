@@ -18,9 +18,10 @@ class Logger:
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
 
-        file_handler = logging.handlers.RotatingFileHandler(
-            os.path.join("./logs/logs.log"), maxBytes=1024 * 1024, backupCount=3
-        )
-        file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.INFO)
-        logger.addHandler(file_handler)
+        if not any(isinstance(handler, logging.handlers.RotatingFileHandler) for handler in logger.handlers):
+            file_handler = logging.handlers.RotatingFileHandler(
+                os.path.join("./logs/logs.log"), maxBytes=1024 * 1024, backupCount=3
+            )
+            file_handler.setFormatter(formatter)
+            file_handler.setLevel(logging.INFO)
+            logger.addHandler(file_handler)
