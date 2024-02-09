@@ -9,8 +9,6 @@ class Logger:
     @staticmethod
     def initialize_logger() -> None:
         """Initializes INFO logger with handler for output in logs file."""
-        os.makedirs("./logs", exist_ok=True)
-
         logging.basicConfig(level=logging.INFO)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s "
