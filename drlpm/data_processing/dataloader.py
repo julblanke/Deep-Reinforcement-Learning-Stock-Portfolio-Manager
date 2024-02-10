@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 from drlpm.utils.logger import Logger
 from drlpm.data_processing.stocks.stock_loader import StockLoader
+from drlpm.data_processing.indices.index_loader import IndexLoader
 from drlpm.data_processing.indicators.indicator_loader import IndicatorLoader
 
 
@@ -43,6 +44,9 @@ class Dataloader:
 
         self.logger.info("Calculating indicators..")
         IndicatorLoader.add_indicators(data=data, stock_symbols=self.stock_symbols)
+
+        self.logger.info("Adding indices..")
+        IndexLoader.add_indices(data=data, period=self.period, interval=self.interval, update_data=self.update_data)
 
         data.dropna(inplace=True)       # gets rid of nan created by sma/ema calc
         return data
