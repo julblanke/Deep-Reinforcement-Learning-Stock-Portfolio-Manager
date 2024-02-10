@@ -31,10 +31,10 @@ class StockLoader:
                                            period=period,
                                            interval=interval)
                               .get_stock_data())
-                stock_data.to_csv(f"./drlpm/data/{stock}.csv", index=False)
+                stock_data.to_csv(f"./drlpm/data/stocks/{stock}.csv", index=False)
                 logger.info(f"Successfully loaded '{stock}' data from yfinance.")
             else:
-                stock_data = pd.read_csv(f"./drlpm/data/{stock}.csv")
+                stock_data = pd.read_csv(f"./drlpm/data/stocks/{stock}.csv")
                 logger.info(f"Successfully loaded '{stock}' data from local .csv file.")
 
             stock_data.columns = [f"{col}_{stock}" for col in stock_data.columns]
