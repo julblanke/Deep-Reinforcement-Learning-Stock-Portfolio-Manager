@@ -62,7 +62,7 @@ To get started with using the Stock Trading Portfolio Manager, follow these step
 
 3. **Run the Application**: Once the dependencies are installed, you can run the application from the project directory:
     ```
-    python drlpm/drlpm_run.py NVDA ASML AMZN --period="2y" --interval="1d" --initial-balance=10000 --train-timesteps=10000 --update-data
+    python drlpm/drlpm_run.py NVDA GOOGL AAPL --model=PPO --period="3y" --interval="1d" --initial-balance=10000 --train-timesteps=20000 --update-data
     ```
     Use option --help to get information on all possible configurations.
     ![typer_help](./static/typer_help.png)
