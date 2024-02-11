@@ -23,11 +23,12 @@ class Gui:
         # sidebar for user input -- config
         with st.sidebar:
             st.header("Configuration Stock Symbols")
-            st.session_state.user_input = st.text_area("Stock symbols", "AAPL NVDA")
+            st.session_state.user_input = st.text_area("Stock symbols", "NVDA GOOGL AAPL")
             st.session_state.stock_symbols = st.session_state.user_input.split()
+            st.session_state.model_name = st.text_input("Model name", "PPO")
             st.session_state.initial_balance = st.text_input("Initial account balance", "10000")
-            st.session_state.train_timesteps = st.text_input("Training timesteps", "10000")
-            st.session_state.period = st.text_input("Period in yfinance termonology", "2y")
+            st.session_state.train_timesteps = st.text_input("Training timesteps", "20000")
+            st.session_state.period = st.text_input("Period in yfinance termonology", "3y")
             st.session_state.interval = st.text_input("Interval in yfinance termonology", "1d")
             st.session_state.update_data = st.checkbox("Check if data should be updated", value=False)
 
@@ -37,7 +38,8 @@ class Gui:
             done = False
             if st.button(f'Train and run'):
                 with st.spinner('Running...'):
-                    DrlPortfolioManager.run(stock_symbols=st.session_state.stock_symbols,
+                    DrlPortfolioManager.run(model=st.session_state.model_name,
+                                            stock_symbols=st.session_state.stock_symbols,
                                             initial_balance=float(st.session_state.initial_balance),
                                             train_timesteps=int(st.session_state.train_timesteps),
                                             period=st.session_state.period,

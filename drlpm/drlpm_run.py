@@ -6,11 +6,11 @@ import typer
 import logging
 import torch as th
 from typing import List
-from stable_baselines3 import PPO
 from drlpm.utils.logger import Logger
 from drlpm.utils.visualizer import Visualizer
 from drlpm.envs.stock_env import StockTradingEnv
 from drlpm.data_processing.dataloader import Dataloader
+from drlpm.agents.stable_baselines_models import StableBaselinesModels
 
 
 DEVICE = th.device("cuda" if th.cuda.is_available() else "cpu")
@@ -20,11 +20,12 @@ class DrlPortfolioManager:
     """Deep Reinforcement Learning Portfolio Manager."""
 
     @staticmethod
-    def run(stock_symbols: list, initial_balance: float, train_timesteps: int, period: str,
+    def run(model: str, stock_symbols: list, initial_balance: float, train_timesteps: int, period: str,
             interval: str, update_data: bool) -> None:
         """Run the portfolio manager.
 
         Args:
+            model (str): Reinforcement learning model to use
             stock_symbols (list): List of stock as stock-symbols, e.g. 'AAPL'
             initial_balance (float): Initial account balance
             train_timesteps (int): Number of model time steps for training
@@ -34,6 +35,14 @@ class DrlPortfolioManager:
         """
         Logger.initialize_logger()
         logger = logging.getLogger()
+
+        model_name_pyclass_dict = {
+            "PPO": StableBaselinesModels,
+            "A2C": StableBaselinesModels,
+            "DDPG": StableBaselinesModels,
+            "SAC": StableBaselinesModels,
+            "TD3": StableBaselinesModels
+        }
 
         # load data and create environment
         data = (Dataloader(stock_symbols=stock_symbols,
@@ -49,11 +58,10 @@ class DrlPortfolioManager:
         logger.info("Created environment.")
 
         # create and train ppo model
-        model = PPO('MlpPolicy',
-                    env=env,
-                    verbose=1,
-                    device=DEVICE,
-                    tensorboard_log="./logs")
+        model = model_name_pyclass_dict[model](model=model).get_model(env=env,
+                                                                      verbose=1,
+                                                                      device=DEVICE,
+                                                                      tensorboard_log="./logs")
         model.learn(total_timesteps=train_timesteps)
         logger.info("Finished training model.")
 
@@ -81,7 +89,10 @@ class DrlPortfolioManager:
                 break
         logger.info("Done!")
 
+
 def main(stock_symbols: List[str] = typer.Argument(..., help="Define stock symbols to be considered for portfolio."),
+         model: str = typer.Option(..., help="Choose reinforcement learning model. Currently supported: \n"
+                                             "PPO, A2C, DDPG, SAC, TD3"),
          initial_balance: float = typer.Option(..., help="Initial account balance."),
          train_timesteps: int = typer.Option(..., help="Number of model time steps for training."),
          period: str = typer.Option(..., help="Define time period to take into account."),
@@ -92,13 +103,15 @@ def main(stock_symbols: List[str] = typer.Argument(..., help="Define stock symbo
 
     Args:
         stock_symbols (list): List of stock as stock-symbols, e.g. 'AAPL'
+        model (str): Reinforcement learning model to use
         initial_balance (float): Initial account balance
         train_timesteps (int): Number of model time steps for training
         period (str): Time period for data to take into account -- in yfinance terms -- e.g. '2y'
         interval (str): Data points frequency -- in yfinance terms -- e.g. '1d'
         update_data (bool): Whether to update stock data
     """
-    DrlPortfolioManager.run(stock_symbols=stock_symbols,
+    DrlPortfolioManager.run(model=model,
+                            stock_symbols=stock_symbols,
                             initial_balance=initial_balance,
                             train_timesteps=train_timesteps,
                             period=period,
