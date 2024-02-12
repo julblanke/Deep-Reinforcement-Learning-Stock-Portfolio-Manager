@@ -7,9 +7,9 @@ import logging
 import torch as th
 from typing import List
 from drlpm.utils.logger import Logger
-from drlpm.utils.visualizer import Visualizer
+from drlpm.base.dataloader import Dataloader
 from drlpm.envs.stock_env import StockTradingEnv
-from drlpm.data_processing.dataloader import Dataloader
+from drlpm.base.train_and_eval import TrainAndEval
 from drlpm.agents.stable_baselines_models import StableBaselinesModels
 
 
@@ -36,6 +36,7 @@ class DrlPortfolioManager:
         Logger.initialize_logger()
         logger = logging.getLogger()
 
+        # mapping of model name to respective python class
         model_name_pyclass_dict = {
             "PPO": StableBaselinesModels,
             "A2C": StableBaselinesModels,
@@ -44,7 +45,7 @@ class DrlPortfolioManager:
             "TD3": StableBaselinesModels
         }
 
-        # load data and create environment
+        # load data
         data = (Dataloader(stock_symbols=stock_symbols,
                            period=period,
                            interval=interval,
@@ -52,41 +53,24 @@ class DrlPortfolioManager:
                 .get_data())
         logger.info("Loading data finished.")
 
+        # create environment
         env = StockTradingEnv(data=data,
                               stock_symbols=stock_symbols,
                               initial_balance=initial_balance)
         logger.info("Created environment.")
 
-        # create and train ppo model
-        model = model_name_pyclass_dict[model](model=model).get_model(env=env,
-                                                                      verbose=1,
-                                                                      device=DEVICE,
-                                                                      tensorboard_log="./logs")
-        model.learn(total_timesteps=train_timesteps)
-        logger.info("Finished training model.")
+        # create model
+        model = model_name_pyclass_dict[model](model_name=model).get_model(env=env,
+                                                                           verbose=1,
+                                                                           device=DEVICE,
+                                                                           tensorboard_log="./logs")
 
-        vec_env = model.get_env()
-        obs = vec_env.reset()
-        states = None
-        vec_env.reset()
-        model_info = list()
-        while True:
-            action, states = model.predict(obs,
-                                           state=states,
-                                           deterministic=True)
-            obs, rewards, terminated, info = vec_env.step(action)
+        # train and eval
+        TrainAndEval.train_and_eval(model=model,
+                                    stock_symbols=stock_symbols,
+                                    data=data,
+                                    train_timesteps=train_timesteps)
 
-            # store for visualization
-            model_info.append(info)
-
-            if terminated:
-                print("info", info)
-                (Visualizer(data=data,
-                            stock_symbols=stock_symbols,
-                            model_info=model_info)
-                 .create_graphs())
-                logger.info("Created graphs.")
-                break
         logger.info("Done!")
 
 

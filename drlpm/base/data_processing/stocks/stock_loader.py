@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 from drlpm.utils.logger import Logger
-from drlpm.data_processing.stocks.scraper_yahoo import ScraperYahoo
+from drlpm.base.data_processing.stocks.scraper_yahoo import ScraperYahoo
 
 
 class StockLoader:

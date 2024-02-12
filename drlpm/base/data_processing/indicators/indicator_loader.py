@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 from drlpm.utils.logger import Logger
-from drlpm.data_processing.indicators.moving_averages import MovingAverages
+from drlpm.base.data_processing.indicators.moving_averages import MovingAverages
 
 
 WINDOW_SIZES = [20, 50, 100, 200]
