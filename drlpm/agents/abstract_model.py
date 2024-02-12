@@ -5,13 +5,14 @@ from abc import ABC, abstractmethod
 class AbstractModel(ABC):
     """Abstract base class for reinforcement learning models."""
 
-    def __init__(self, model: str) -> None:
+    @abstractmethod
+    def __init__(self, model_name: str) -> None:
         """Constructor.
 
         Args:
-            model (str): Name of the model
+            model_name (str): Name of the model
         """
-        self.model = model
+        self.model_name = model_name
 
     @abstractmethod
     def get_model(self, env: gym.Env, verbose: int, device: str, tensorboard_log: str) -> None:

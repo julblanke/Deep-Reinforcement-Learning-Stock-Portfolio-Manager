@@ -7,13 +7,13 @@ from stable_baselines3 import PPO, A2C, DDPG, SAC, TD3
 class StableBaselinesModels(AbstractModel):
     """Able to call stable baselines 3 models by name."""
 
-    def __init__(self, model: str) -> None:
+    def __init__(self, model_name: str) -> None:
         """Constructor.
 
         Args:
-            model (str): Name of the model
+            model_name (str): Name of the model
         """
-        super().__init__(model=model)
+        super().__init__(model_name=model_name)
         self.model_name_pyclass_dict = {
             "PPO": PPO,
             "A2C": A2C,
@@ -35,8 +35,8 @@ class StableBaselinesModels(AbstractModel):
         Returns:
             Union(PPO, A2C, DDPG, SAC, TD3): Respective model -- defined by user
         """
-        return self.model_name_pyclass_dict[self.model]('MlpPolicy',
-                                                        env=env,
-                                                        verbose=verbose,
-                                                        device=device,
-                                                        tensorboard_log=tensorboard_log)
+        return self.model_name_pyclass_dict[self.model_name]('MlpPolicy',
+                                                             env=env,
+                                                             verbose=verbose,
+                                                             device=device,
+                                                             tensorboard_log=tensorboard_log)

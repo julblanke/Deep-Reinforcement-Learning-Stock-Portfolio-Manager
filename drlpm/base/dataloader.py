@@ -2,9 +2,9 @@ import os
 import logging
 import pandas as pd
 from drlpm.utils.logger import Logger
-from drlpm.data_processing.stocks.stock_loader import StockLoader
-from drlpm.data_processing.indices.index_loader import IndexLoader
-from drlpm.data_processing.indicators.indicator_loader import IndicatorLoader
+from drlpm.base.data_processing.stocks.stock_loader import StockLoader
+from drlpm.base.data_processing.indices.index_loader import IndexLoader
+from drlpm.base.data_processing.indicators.indicator_loader import IndicatorLoader
 
 
 class Dataloader:
