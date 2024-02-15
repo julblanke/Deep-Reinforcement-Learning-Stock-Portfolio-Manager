@@ -9,7 +9,9 @@ class StockTradingEnv(gym.Env):
 
     Currently, the environment tracks cash, portfolio value, number of shares per stock and a total capital.
     The environment takes as input these parameters as well as an observation per time step consisting of the
-    Open, High, Low and Close values of every stock given.
+    Open, High, Low and Close values of every stock given, their respective sma and ema with window size of
+    20, 50, 100, 200 and the following list of indices:
+    ["SPY", "QQQ", "SMH", "XLV", "XLP", "XLE", "XLF", "XLI", "XLU", "XLB", "XLK", "KRE"]
 
     A continuous action vector of shape [2 * nr_stocks, 1] with values having a range of [0, 1] represents
     the buy and sell action of every stock (e.g. [AAPL_buy, AAPL_sell, MSFT_buy, MSFT_sell] for AAPL and MSFT).
