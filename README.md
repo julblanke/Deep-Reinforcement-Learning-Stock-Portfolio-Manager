@@ -114,7 +114,7 @@ To get started with using the Stock Trading Portfolio Manager, follow these step
     agent_ids: ["agent1", "agent2", "agent3", "agent4"]
     worker_index: 0
     num_workers: 1
-    num_gpus: 1
+    num_gpus: 0
     algo_reload: False
     ```
     or write your own custom multi-agent algo and or policies like this..
