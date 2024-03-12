@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>drlpm.algos.rllib_algos &mdash; Deep-Reinforcement-Learning-Stock-Portfolio-Manager 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a class="site-nav-toggle hidden-lg-up"><i class="icon-menu"></i></a>
+            <a class="site-title" href="../../../index.html">
+                Deep-Reinforcement-Learning-Stock-Portfolio-Manager
+            </a>
+        </div>
+    </header>
+
+
+<div class="breadcrumbs-outer hidden-xs-down">
+    <div class="container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a></li>
+        
+          <li><a href="../../index.html">Module code</a></li>
+        
+      <li>drlpm.algos.rllib_algos</li>
+    
+    
+      <li class="breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+</div>
+    </div>
+</div>
+    <div class="main-outer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-3 site-nav">
+                    
+<div role="search">
+    <form class="search" action="../../../search.html" method="get">
+        <div class="icon-input">
+            <input type="text" name="q" placeholder="Search" />
+            <span class="icon-search"></span>
+        </div>
+        <input type="submit" value="Go" class="d-hidden" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+                    <div class="site-nav-tree">
+                        
+                            
+                            
+                                <div class="local-toc"></div>
+                            
+                        
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="document">
+                        
+                            
+  <h1>Source code for drlpm.algos.rllib_algos</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">gymnasium.spaces</span> <span class="kn">import</span> <span class="n">Box</span>
+<span class="kn">from</span> <span class="nn">ray.rllib.env</span> <span class="kn">import</span> <span class="n">EnvContext</span>
+<span class="kn">from</span> <span class="nn">ray.rllib.policy.policy</span> <span class="kn">import</span> <span class="n">PolicySpec</span>
+<span class="kn">from</span> <span class="nn">ray.rllib.algorithms.ppo</span> <span class="kn">import</span> <span class="n">PPOConfig</span>
+<span class="kn">from</span> <span class="nn">drlpm.algos.abstract_algo</span> <span class="kn">import</span> <span class="n">AbstractAlgo</span>
+
+
+<div class="viewcode-block" id="RLlibAlgo"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RLlibAlgo">[docs]</a><span class="k">class</span> <span class="nc">RLlibAlgo</span><span class="p">(</span><span class="n">AbstractAlgo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Able to call rllib algos by name. Only works for algos with config setup like RllibPPO below.</span>
+<span class="sd">       Note: Further algos will be added -- until now, only PPO is supported.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RLlibAlgo.__init__"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RLlibAlgo.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algo_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            algo_name (str): Name of the algo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">algo_name</span><span class="o">=</span><span class="n">algo_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algo_name_pyclass_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;PPO&quot;</span><span class="p">:</span> <span class="n">RllibPPO</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="RLlibAlgo.get_algo"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RLlibAlgo.get_algo">[docs]</a>    <span class="k">def</span> <span class="nf">get_algo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the corresponding reinforcement learning algo specified by user.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            kwargs (dict):</span>
+<span class="sd">                env (MultiAgentStockTradingEnv): The Rllib MultiAgentEnv environment for which to create the algo</span>
+<span class="sd">                env_config (EnvContext):</span>
+<span class="sd">                    data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices</span>
+<span class="sd">                    stock_symbols (list): List of stock as stock-symbols, e.g. &#39;AAPL&#39;</span>
+<span class="sd">                    initial_balance (float): Initial account balance</span>
+<span class="sd">                    agent_ids (list): Names of agents</span>
+<span class="sd">                config (dict): Dictionary of user defined configurations</span>
+<span class="sd">                data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (Any): Respective algo -- defined by user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">algo_name_pyclass_mapping</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">algo_name</span><span class="p">](</span><span class="n">env</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;env&quot;</span><span class="p">],</span>
+                                                              <span class="n">env_config</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;env_config&quot;</span><span class="p">],</span>
+                                                              <span class="n">config</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">],</span>
+                                                              <span class="n">data</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])()</span></div></div>
+
+
+<div class="viewcode-block" id="RllibPPO"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RllibPPO">[docs]</a><span class="k">class</span> <span class="nc">RllibPPO</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PPO for multi agent environment.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RllibPPO.__init__"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RllibPPO.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">env_config</span><span class="p">:</span> <span class="n">EnvContext</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env (MultiAgentStockTradingEnv): The Rllib MultiAgentEnv environment for which to create the algo</span>
+<span class="sd">            env_config (EnvContext):</span>
+<span class="sd">                data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices</span>
+<span class="sd">                stock_symbols (list): List of stock as stock-symbols, e.g. &#39;AAPL&#39;</span>
+<span class="sd">                initial_balance (float): Initial account balance</span>
+<span class="sd">                agent_ids (list): Names of agents</span>
+<span class="sd">            config (dict): Dictionary of user defined configurations</span>
+<span class="sd">            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_config</span> <span class="o">=</span> <span class="n">env_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="c1"># NOTE: obs dim given by portfolio values (3) + positions per stock (nr_stocks) + data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observation_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stock_symbols&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundary</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;initial_balance&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span>     <span class="c1"># applies a factor of 100 to obs Box spaces</span></div>
+
+<div class="viewcode-block" id="RllibPPO.__call__"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RllibPPO.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns PPO algo.</span>
+
+<span class="sd">        Note: The current version is a template on how to implement an algo for the multi agent environment into this</span>
+<span class="sd">              repository. The agents differ only in random gamma values which does not justify the multi agent</span>
+<span class="sd">              environment since hyperparameter tuning could achieve the same.</span>
+<span class="sd">              In order to do some serious stuff, use the high customization options of rllib and add a class here.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (Any): PPO algo with rllib -- with defined policies</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">policies</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;agent_ids&quot;</span><span class="p">])):</span>
+            <span class="n">policies</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;policy_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PolicySpec</span><span class="p">(</span>
+                            <span class="kc">None</span><span class="p">,</span> <span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">boundary</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">boundary</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">observation_shape</span><span class="p">),</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="n">RllibPPO</span><span class="o">.</span><span class="n">_sample_gamma</span><span class="p">()}</span>
+                        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">PPOConfig</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">environment</span><span class="p">(</span><span class="n">env</span><span class="o">=</span><span class="s2">&quot;marl_env&quot;</span><span class="p">,</span> <span class="n">env_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">env_config</span><span class="p">,</span> <span class="n">disable_env_checking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">multi_agent</span><span class="p">(</span>
+                    <span class="n">policies</span><span class="o">=</span><span class="n">policies</span><span class="p">,</span>
+                    <span class="n">policy_mapping_fn</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">aid</span><span class="p">,</span> <span class="n">episode</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;policy_</span><span class="si">{</span><span class="n">aid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="o">.</span><span class="n">resources</span><span class="p">(</span><span class="n">num_gpus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_gpus&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">build</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="RllibPPO._sample_gamma"><a class="viewcode-back" href="../../../drlpm.algos.rllib_algos.html#drlpm.algos.rllib_algos.RllibPPO._sample_gamma">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_sample_gamma</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Samples values for gamma.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (float): Random number between 0.7 and 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.7</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="mi">1</span><span class="p">))</span></div></div>
+</pre></div>
+
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.0',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/sphinx_highlight.js"></script>
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+    <div class="footer" role="contentinfo">
+        <div class="container">
+            &#169; Copyright 2024, Julian Blanke.
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.
+        </div>
+    </div>  
+
+</body>
+</html>

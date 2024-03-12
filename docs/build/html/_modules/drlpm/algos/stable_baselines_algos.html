@@ -1,0 +1,186 @@
+
+
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>drlpm.algos.stable_baselines_algos &mdash; Deep-Reinforcement-Learning-Stock-Portfolio-Manager 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a class="site-nav-toggle hidden-lg-up"><i class="icon-menu"></i></a>
+            <a class="site-title" href="../../../index.html">
+                Deep-Reinforcement-Learning-Stock-Portfolio-Manager
+            </a>
+        </div>
+    </header>
+
+
+<div class="breadcrumbs-outer hidden-xs-down">
+    <div class="container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a></li>
+        
+          <li><a href="../../index.html">Module code</a></li>
+        
+      <li>drlpm.algos.stable_baselines_algos</li>
+    
+    
+      <li class="breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+</div>
+    </div>
+</div>
+    <div class="main-outer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-3 site-nav">
+                    
+<div role="search">
+    <form class="search" action="../../../search.html" method="get">
+        <div class="icon-input">
+            <input type="text" name="q" placeholder="Search" />
+            <span class="icon-search"></span>
+        </div>
+        <input type="submit" value="Go" class="d-hidden" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+                    <div class="site-nav-tree">
+                        
+                            
+                            
+                                <div class="local-toc"></div>
+                            
+                        
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="document">
+                        
+                            
+  <h1>Source code for drlpm.algos.stable_baselines_algos</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">drlpm.algos.abstract_algo</span> <span class="kn">import</span> <span class="n">AbstractAlgo</span>
+<span class="kn">from</span> <span class="nn">stable_baselines3</span> <span class="kn">import</span> <span class="n">PPO</span><span class="p">,</span> <span class="n">A2C</span><span class="p">,</span> <span class="n">DDPG</span><span class="p">,</span> <span class="n">SAC</span><span class="p">,</span> <span class="n">TD3</span>
+
+
+<div class="viewcode-block" id="StableBaselinesAlgos"><a class="viewcode-back" href="../../../drlpm.algos.stable_baselines_algos.html#drlpm.algos.stable_baselines_algos.StableBaselinesAlgos">[docs]</a><span class="k">class</span> <span class="nc">StableBaselinesAlgos</span><span class="p">(</span><span class="n">AbstractAlgo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Able to call stable baselines 3 algos by name.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StableBaselinesAlgos.__init__"><a class="viewcode-back" href="../../../drlpm.algos.stable_baselines_algos.html#drlpm.algos.stable_baselines_algos.StableBaselinesAlgos.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algo_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            algo_name (str): Name of the algo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">algo_name</span><span class="o">=</span><span class="n">algo_name</span><span class="p">)</span>
+        <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;stable_baselines3&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algo_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">algo_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StableBaselinesAlgos.get_algo"><a class="viewcode-back" href="../../../drlpm.algos.stable_baselines_algos.html#drlpm.algos.stable_baselines_algos.StableBaselinesAlgos.get_algo">[docs]</a>    <span class="k">def</span> <span class="nf">get_algo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">PPO</span><span class="p">,</span> <span class="n">A2C</span><span class="p">,</span> <span class="n">DDPG</span><span class="p">,</span> <span class="n">SAC</span><span class="p">,</span> <span class="n">TD3</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the corresponding reinforcement learning algo specified by user.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            kwargs (dict):</span>
+<span class="sd">                env (gym.Env): The Gym environment for which to create the algo</span>
+<span class="sd">                verbose (int): Verbosity level for logging messages during training</span>
+<span class="sd">                device (str): The device on which to perform computations (&#39;cpu&#39; or &#39;cuda&#39;)</span>
+<span class="sd">                tensorboard_log (str): The directory path where TensorBoard logs will be saved</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Union(PPO, A2C, DDPG, SAC, TD3): Respective algo -- defined by user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">algo_class</span><span class="p">(</span><span class="s1">&#39;MlpPolicy&#39;</span><span class="p">,</span>
+                               <span class="n">env</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;env&quot;</span><span class="p">],</span>
+                               <span class="n">verbose</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">],</span>
+                               <span class="n">device</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;device&quot;</span><span class="p">],</span>
+                               <span class="n">tensorboard_log</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;tensorboard_log&quot;</span><span class="p">])</span></div></div>
+</pre></div>
+
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.0',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/sphinx_highlight.js"></script>
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+    <div class="footer" role="contentinfo">
+        <div class="container">
+            &#169; Copyright 2024, Julian Blanke.
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.
+        </div>
+    </div>  
+
+</body>
+</html>

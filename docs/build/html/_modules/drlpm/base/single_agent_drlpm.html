@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>drlpm.base.single_agent_drlpm &mdash; Deep-Reinforcement-Learning-Stock-Portfolio-Manager 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a class="site-nav-toggle hidden-lg-up"><i class="icon-menu"></i></a>
+            <a class="site-title" href="../../../index.html">
+                Deep-Reinforcement-Learning-Stock-Portfolio-Manager
+            </a>
+        </div>
+    </header>
+
+
+<div class="breadcrumbs-outer hidden-xs-down">
+    <div class="container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a></li>
+        
+          <li><a href="../../index.html">Module code</a></li>
+        
+      <li>drlpm.base.single_agent_drlpm</li>
+    
+    
+      <li class="breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+</div>
+    </div>
+</div>
+    <div class="main-outer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-3 site-nav">
+                    
+<div role="search">
+    <form class="search" action="../../../search.html" method="get">
+        <div class="icon-input">
+            <input type="text" name="q" placeholder="Search" />
+            <span class="icon-search"></span>
+        </div>
+        <input type="submit" value="Go" class="d-hidden" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+                    <div class="site-nav-tree">
+                        
+                            
+                            
+                                <div class="local-toc"></div>
+                            
+                        
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="document">
+                        
+                            
+  <h1>Source code for drlpm.base.single_agent_drlpm</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">torch</span> <span class="k">as</span> <span class="nn">th</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">drlpm.utils.visualizer</span> <span class="kn">import</span> <span class="n">SingleAgentVisualizer</span>
+<span class="kn">from</span> <span class="nn">drlpm.envs.single_agent_env</span> <span class="kn">import</span> <span class="n">SingleAgentStockTradingEnv</span>
+<span class="kn">from</span> <span class="nn">drlpm.algos.stable_baselines_algos</span> <span class="kn">import</span> <span class="n">StableBaselinesAlgos</span>
+
+
+<div class="viewcode-block" id="SingleAgentDrlpm"><a class="viewcode-back" href="../../../drlpm.base.single_agent_drlpm.html#drlpm.base.single_agent_drlpm.SingleAgentDrlpm">[docs]</a><span class="k">class</span> <span class="nc">SingleAgentDrlpm</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to run single agent stock portfolio manager.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="SingleAgentDrlpm.run_single_agent"><a class="viewcode-back" href="../../../drlpm.base.single_agent_drlpm.html#drlpm.base.single_agent_drlpm.SingleAgentDrlpm.run_single_agent">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">run_single_agent</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">th</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run a single agent environment with stable baselines 3 algos.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config (dict): User input as yml configuration file</span>
+<span class="sd">            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices</span>
+<span class="sd">            device (th.device): Device to run on</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+        <span class="c1"># create environment</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">SingleAgentStockTradingEnv</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                         <span class="n">stock_symbols</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stock_symbols&quot;</span><span class="p">],</span>
+                                         <span class="n">initial_balance</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;initial_balance&quot;</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Created environment.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># create algo</span>
+        <span class="n">algo</span> <span class="o">=</span> <span class="n">StableBaselinesAlgos</span><span class="p">(</span><span class="n">algo_name</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;algo&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">get_algo</span><span class="p">(</span><span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                                                                       <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                                       <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                                                                       <span class="n">tensorboard_log</span><span class="o">=</span><span class="s2">&quot;./logs&quot;</span><span class="p">)</span>
+
+        <span class="c1"># train and eval</span>
+        <span class="n">SingleAgentDrlpm</span><span class="o">.</span><span class="n">train_and_eval</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="n">algo</span><span class="p">,</span>
+                                        <span class="n">stock_symbols</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stock_symbols&quot;</span><span class="p">],</span>
+                                        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                        <span class="n">train_timesteps</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;train_timesteps&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SingleAgentDrlpm.train_and_eval"><a class="viewcode-back" href="../../../drlpm.base.single_agent_drlpm.html#drlpm.base.single_agent_drlpm.SingleAgentDrlpm.train_and_eval">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">train_and_eval</span><span class="p">(</span><span class="n">algo</span><span class="p">,</span> <span class="n">stock_symbols</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">train_timesteps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train and evaluate algo.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            algo: Algo to train and evaluate</span>
+<span class="sd">            stock_symbols (list): List of stock as stock-symbols, e.g. &#39;AAPL&#39;</span>
+<span class="sd">            data (pd.DataFrame): Dataframe with OHLC of stocks with indicators and additional indices</span>
+<span class="sd">            train_timesteps (int): Number of algo time steps for training</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+        <span class="n">algo</span><span class="o">.</span><span class="n">learn</span><span class="p">(</span><span class="n">total_timesteps</span><span class="o">=</span><span class="n">train_timesteps</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished training algo.&quot;</span><span class="p">)</span>
+
+        <span class="n">vec_env</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">get_env</span><span class="p">()</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">vec_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">vec_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="n">algo_info</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">action</span><span class="p">,</span> <span class="n">states</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span>
+                                          <span class="n">state</span><span class="o">=</span><span class="n">states</span><span class="p">,</span>
+                                          <span class="n">deterministic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">obs</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">vec_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+            <span class="c1"># store for visualization</span>
+            <span class="n">algo_info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">terminated</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">SingleAgentVisualizer</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                       <span class="n">stock_symbols</span><span class="o">=</span><span class="n">stock_symbols</span><span class="p">,</span>
+                                       <span class="n">algo_info</span><span class="o">=</span><span class="n">algo_info</span><span class="p">)</span>
+                 <span class="o">.</span><span class="n">create_graphs</span><span class="p">())</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Created graphs.&quot;</span><span class="p">)</span>
+                <span class="k">break</span></div></div>
+</pre></div>
+
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.0',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/sphinx_highlight.js"></script>
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+    <div class="footer" role="contentinfo">
+        <div class="container">
+            &#169; Copyright 2024, Julian Blanke.
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.
+        </div>
+    </div>  
+
+</body>
+</html>
