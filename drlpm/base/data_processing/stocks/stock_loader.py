@@ -29,6 +29,7 @@ class StockLoader:
                                            period=period,
                                            interval=interval)
                               .get_stock_data())
+                os.makedirs("./drlpm/data/stocks/", exist_ok=True)
                 stock_data.to_csv(f"./drlpm/data/stocks/{stock}.csv", index=False)
                 logger.info(f"Successfully loaded '{stock}' data from yfinance.")
             else:

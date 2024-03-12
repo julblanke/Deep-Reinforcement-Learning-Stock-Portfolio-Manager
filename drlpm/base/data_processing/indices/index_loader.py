@@ -1,3 +1,4 @@
+import os
 import logging
 import pandas as pd
 from drlpm.base.data_processing.stocks.scraper_yahoo import ScraperYahoo
@@ -26,6 +27,7 @@ class IndexLoader:
                                             interval=interval)
                                .get_stock_data())
                 data[ticker] = ticker_data.iloc[::-1]["Close"]
+                os.makedirs("./drlpm/data/indices/", exist_ok=True)
                 ticker_data.to_csv(f"./drlpm/data/indices/{ticker}.csv", index=False)
                 logger.info(f"Successfully loaded '{ticker}' data from yfinance.")
             else:
