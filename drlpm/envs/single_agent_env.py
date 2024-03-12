@@ -4,7 +4,7 @@ import gymnasium as gym
 from gymnasium import spaces
 
 
-class StockTradingEnv(gym.Env):
+class SingleAgentStockTradingEnv(gym.Env):
     """RL Environment for stock trading portfolio manager.
 
     Currently, the environment tracks cash, portfolio value, number of shares per stock and a total capital.
@@ -13,7 +13,7 @@ class StockTradingEnv(gym.Env):
     20, 50, 100, 200 and the following list of indices:
     ["SPY", "QQQ", "SMH", "XLV", "XLP", "XLE", "XLF", "XLI", "XLU", "XLB", "XLK", "KRE"]
 
-    A continuous action vector of shape [2 * nr_stocks, 1] with values having a range of [0, 1] represents
+    A continuous action vector of shape [1, 2 * nr_stocks] with values having a range of [0, 1] represents
     the buy and sell action of every stock (e.g. [AAPL_buy, AAPL_sell, MSFT_buy, MSFT_sell] for AAPL and MSFT).
     The buy factor in range [0, 1] decides, how much money of the current cash is used to buy the respective stock.
     The sell factor in range [0, 1] decides, how much money of the current investment in the respective stock is sold.
@@ -28,13 +28,11 @@ class StockTradingEnv(gym.Env):
                total cash available during the time step. Hence, 0.5 * cash will flow into AAPL and 0.25 * cash will
                flow into MSFT. Afterward, cash is updated, and we are left with 0.25% of the previous cash.
     """
-    metadata = {'render.modes': ['human']}
-
     def __init__(self, data: pd.DataFrame, stock_symbols: list, initial_balance: float) -> None:
         """Constructor.
 
         Args:
-            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators
+            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices
             stock_symbols (list(str)): Stock symbols of user defined stocks
             initial_balance (float): Initial account balance
         """
@@ -107,7 +105,7 @@ class StockTradingEnv(gym.Env):
             info (dict): Contains information about portfolio values
         """
         # get current share prices
-        obs, sequence = self._get_obs()
+        observation, sequence = self._get_obs()
         current_share_price_all_stocks = dict()
         for stock in self.stock_symbols:
             current_share_price_all_stocks[stock] = (float(sequence[f"Close_{stock}"]))
@@ -126,9 +124,6 @@ class StockTradingEnv(gym.Env):
             terminated = True
         else:
             terminated = False
-
-        # get obs
-        observation, sequence = self._get_obs()
 
         # define "info"
         info = {
@@ -217,7 +212,7 @@ class StockTradingEnv(gym.Env):
             sequence (np.ndarray): Current Open, High, Low and Close values of stocks
         """
         sequence = self.data.iloc[self.current_step, :].T
-        sequence_flattened = self.data.iloc[self.current_step, :].to_numpy().flatten()
+        sequence_ndarray = self.data.iloc[self.current_step, :].to_numpy()
         general_info = np.array([self.state, self.portfolio_value, self.cash] + list(self.owned_stocks.values()))
-        obs = np.concatenate([general_info, sequence_flattened])
+        obs = np.concatenate([general_info, sequence_ndarray])
         return obs, sequence
