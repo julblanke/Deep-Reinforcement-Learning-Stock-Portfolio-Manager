@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
 from tqdm import tqdm
-from drlpm.utils.logger import Logger
 from drlpm.base.data_processing.stocks.scraper_yahoo import ScraperYahoo
 
 
@@ -21,7 +20,6 @@ class StockLoader:
         Returns:
             conc_df (pd.DataFrame): Concatenated dataframe consisting of Open, High, Low and Close values of stocks
         """
-        Logger.initialize_logger()
         logger = logging.getLogger()
 
         conc_df = pd.DataFrame()

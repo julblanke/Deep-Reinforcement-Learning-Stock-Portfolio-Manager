@@ -1,6 +1,5 @@
 import logging
 import pandas as pd
-from drlpm.utils.logger import Logger
 from drlpm.base.data_processing.indicators.moving_averages import MovingAverages
 
 
@@ -18,7 +17,6 @@ class IndicatorLoader:
             data (pd.DataFrame): Dataframe consisting of Open, High, Low and Close values of stocks
             stock_symbols (list(str)): Stock symbols of user defined stocks
         """
-        Logger.initialize_logger()
         logger = logging.getLogger()
 
         for window in WINDOW_SIZES:
