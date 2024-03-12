@@ -5,7 +5,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
+docs/build/
 !docs/build
 develop-eggs/
 dist/
@@ -45,3 +45,6 @@ venv.bak/
 
 # Streamlit
 /streamlit/result_images/*
+
+# rllib checkpoints
+/rllib_checkpoints

@@ -1,1 +1,1 @@
-from .stock_env import StockTradingEnv
+from .single_agent_env import SingleAgentStockTradingEnv
