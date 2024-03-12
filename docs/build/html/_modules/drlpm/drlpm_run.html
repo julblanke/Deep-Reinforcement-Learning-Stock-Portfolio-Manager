@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>drlpm.drlpm_run &mdash; Deep-Reinforcement-Learning-Stock-Portfolio-Manager 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.min.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a class="site-nav-toggle hidden-lg-up"><i class="icon-menu"></i></a>
+            <a class="site-title" href="../../index.html">
+                Deep-Reinforcement-Learning-Stock-Portfolio-Manager
+            </a>
+        </div>
+    </header>
+
+
+<div class="breadcrumbs-outer hidden-xs-down">
+    <div class="container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a></li>
+        
+          <li><a href="../index.html">Module code</a></li>
+        
+      <li>drlpm.drlpm_run</li>
+    
+    
+      <li class="breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+</div>
+    </div>
+</div>
+    <div class="main-outer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-3 site-nav">
+                    
+<div role="search">
+    <form class="search" action="../../search.html" method="get">
+        <div class="icon-input">
+            <input type="text" name="q" placeholder="Search" />
+            <span class="icon-search"></span>
+        </div>
+        <input type="submit" value="Go" class="d-hidden" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+                    <div class="site-nav-tree">
+                        
+                            
+                            
+                                <div class="local-toc"></div>
+                            
+                        
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="document">
+                        
+                            
+  <h1>Source code for drlpm.drlpm_run</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="p">))</span>
+
+<span class="kn">import</span> <span class="nn">typer</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">torch</span> <span class="k">as</span> <span class="nn">th</span>
+<span class="kn">from</span> <span class="nn">drlpm.utils.logger</span> <span class="kn">import</span> <span class="n">Logger</span>
+<span class="kn">from</span> <span class="nn">drlpm.utils.config_reader</span> <span class="kn">import</span> <span class="n">ConfigReader</span>
+<span class="kn">from</span> <span class="nn">drlpm.base.multi_agent_drlpm</span> <span class="kn">import</span> <span class="n">MultiAgentDrlpm</span>
+<span class="kn">from</span> <span class="nn">drlpm.base.single_agent_drlpm</span> <span class="kn">import</span> <span class="n">SingleAgentDrlpm</span>
+<span class="kn">from</span> <span class="nn">drlpm.base.data_processing.dataloader</span> <span class="kn">import</span> <span class="n">Dataloader</span>
+
+
+<span class="n">DEVICE</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">th</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DrlPortfolioManager"><a class="viewcode-back" href="../../drlpm.drlpm_run.html#drlpm.drlpm_run.DrlPortfolioManager">[docs]</a><span class="k">class</span> <span class="nc">DrlPortfolioManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deep Reinforcement Learning Portfolio Manager.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DrlPortfolioManager.run"><a class="viewcode-back" href="../../drlpm.drlpm_run.html#drlpm.drlpm_run.DrlPortfolioManager.run">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./examples/multi_agent.yaml&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the portfolio manager.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config_path (str): Path to yaml config file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">initialize_logger</span><span class="p">()</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigReader</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">Dataloader</span><span class="p">(</span><span class="n">stock_symbols</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stock_symbols&quot;</span><span class="p">],</span>
+                           <span class="n">period</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;period&quot;</span><span class="p">],</span>
+                           <span class="n">interval</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">],</span>
+                           <span class="n">update_data</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;update_data&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading data finished.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;drlpm_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;single_agent&quot;</span><span class="p">:</span>
+            <span class="n">SingleAgentDrlpm</span><span class="o">.</span><span class="n">run_single_agent</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">DEVICE</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;drlpm_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;multi_agent&quot;</span><span class="p">:</span>
+            <span class="n">MultiAgentDrlpm</span><span class="o">.</span><span class="n">run_multi_agent</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drlpm_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not known.&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot; Only &#39;single_agent&#39; and &#39;multi_agent&#39; known.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done!&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../drlpm.drlpm_run.html#drlpm.drlpm_run.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Define path to yml config file.&quot;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main func for typer.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config_path (str): Path to yaml config file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">DrlPortfolioManager</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">typer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+</pre></div>
+
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'2.0',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+    <div class="footer" role="contentinfo">
+        <div class="container">
+            &#169; Copyright 2024, Julian Blanke.
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.
+        </div>
+    </div>  
+
+</body>
+</html>

@@ -10,3 +10,12 @@ gymnasium
 matplotlib
 pillow
 tqdm
+pettingzoo
+ray
+dm_tree
+scikit-image
+lz4
+ray[tune]
+gputil
+sphinx==6.2.1
+furo

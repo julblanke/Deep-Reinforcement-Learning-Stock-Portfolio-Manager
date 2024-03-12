@@ -23,14 +23,7 @@ class Gui:
         # sidebar for user input -- config
         with st.sidebar:
             st.header("Configuration Stock Symbols")
-            st.session_state.user_input = st.text_area("Stock symbols", "NVDA GOOGL AAPL")
-            st.session_state.stock_symbols = st.session_state.user_input.split()
-            st.session_state.model_name = st.text_input("Model name", "PPO")
-            st.session_state.initial_balance = st.text_input("Initial account balance", "10000")
-            st.session_state.train_timesteps = st.text_input("Training timesteps", "20000")
-            st.session_state.period = st.text_input("Period in yfinance termonology", "3y")
-            st.session_state.interval = st.text_input("Interval in yfinance termonology", "1d")
-            st.session_state.update_data = st.checkbox("Check if data should be updated", value=False)
+            st.session_state.user_config_input = st.text_input("config path", "./examples/multi_agent.yml")
 
         # tab1
         with tab1:
@@ -38,13 +31,7 @@ class Gui:
             done = False
             if st.button(f'Train and run'):
                 with st.spinner('Running...'):
-                    DrlPortfolioManager.run(model=st.session_state.model_name,
-                                            stock_symbols=st.session_state.stock_symbols,
-                                            initial_balance=float(st.session_state.initial_balance),
-                                            train_timesteps=int(st.session_state.train_timesteps),
-                                            period=st.session_state.period,
-                                            interval=st.session_state.interval,
-                                            update_data=st.session_state.update_data)
+                    DrlPortfolioManager.run(config_path=st.session_state.user_config_input)
                     st.success('Done.')
                 done = True
 
@@ -54,23 +41,38 @@ class Gui:
                 st.header("Performance")
                 img_src_dir = "./streamlit/result_images/performance"
 
+                files = sorted(os.listdir(img_src_dir))
+                images_total = list()
+                images_portfolio = list()
+                images_cash = list()
+                for file in files:
+                    figure_file = os.path.join(img_src_dir, file)
+
+                    if "total" in file:
+                        image = Image.open(figure_file)
+                        images_total.append(image)
+                    if "portfolio" in file:
+                        image = Image.open(figure_file)
+                        images_portfolio.append(image)
+                    if "cash" in file:
+                        image = Image.open(figure_file)
+                        images_cash.append(image)
+
                 # Display images side by side
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     # total
-                    figure_file = os.path.join(img_src_dir, f"total.png")
-                    image = Image.open(figure_file)
-                    st.image(image, use_column_width=True)
-
-                    # portfolio
-                    figure_file = os.path.join(img_src_dir, f"portfolio.png")
-                    image = Image.open(figure_file)
-                    st.image(image, use_column_width=True)
+                    for image in images_total:
+                        st.image(image, use_column_width=True)
 
                 with col2:
-                    figure_file = os.path.join(img_src_dir, f"cash.png")
-                    image = Image.open(figure_file)
-                    st.image(image, use_column_width=True)
+                    # portfolio
+                    for image in images_portfolio:
+                        st.image(image, use_column_width=True)
+
+                with col3:
+                    for image in images_cash:
+                        st.image(image, use_column_width=True)
 
         # tab3
         with tab3:
@@ -78,11 +80,10 @@ class Gui:
                 st.header("Shares")
 
                 img_src_dir = "./streamlit/result_images/shares"
-                files = os.listdir(img_src_dir)
+                files = sorted(os.listdir(img_src_dir))
                 images = list()
                 for file in files:
-                    stock_symbol = file.split(".")[0]
-                    figure_file = os.path.join(img_src_dir, f"{stock_symbol}.png")
+                    figure_file = os.path.join(img_src_dir, file)
                     image = Image.open(figure_file)
                     images.append(image)
 

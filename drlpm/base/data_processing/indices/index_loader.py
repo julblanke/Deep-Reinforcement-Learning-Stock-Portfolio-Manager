@@ -1,6 +1,5 @@
 import logging
 import pandas as pd
-from drlpm.utils.logger import Logger
 from drlpm.base.data_processing.stocks.scraper_yahoo import ScraperYahoo
 
 
@@ -17,7 +16,6 @@ class IndexLoader:
             interval (str): Data points frequency -- in yfinance terms -- e.g. '1d'
             update_data (bool): Whether to update stock data
         """
-        Logger.initialize_logger()
         logger = logging.getLogger()
 
         indices_to_track = ["SPY", "QQQ", "SMH", "XLV", "XLP", "XLE", "XLF", "XLI", "XLU", "XLB", "XLK", "KRE"]

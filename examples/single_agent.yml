@@ -1,0 +1,8 @@
+drlpm_type: single_agent
+stock_symbols: ["AAPL", "NVDA", "ASML"]
+initial_balance: 10000
+algo: PPO
+interval: "1d"
+period: "3y"
+train_timesteps: 20000
+update_data: True

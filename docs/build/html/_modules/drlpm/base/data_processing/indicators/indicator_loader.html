@@ -1,0 +1,176 @@
+
+
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>drlpm.base.data_processing.indicators.indicator_loader &mdash; Deep-Reinforcement-Learning-Stock-Portfolio-Manager 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../../_static/css/theme.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/css/custom.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/css/theme.min.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a class="site-nav-toggle hidden-lg-up"><i class="icon-menu"></i></a>
+            <a class="site-title" href="../../../../../index.html">
+                Deep-Reinforcement-Learning-Stock-Portfolio-Manager
+            </a>
+        </div>
+    </header>
+
+
+<div class="breadcrumbs-outer hidden-xs-down">
+    <div class="container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a></li>
+        
+          <li><a href="../../../../index.html">Module code</a></li>
+        
+      <li>drlpm.base.data_processing.indicators.indicator_loader</li>
+    
+    
+      <li class="breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+</div>
+    </div>
+</div>
+    <div class="main-outer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-3 site-nav">
+                    
+<div role="search">
+    <form class="search" action="../../../../../search.html" method="get">
+        <div class="icon-input">
+            <input type="text" name="q" placeholder="Search" />
+            <span class="icon-search"></span>
+        </div>
+        <input type="submit" value="Go" class="d-hidden" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+                    <div class="site-nav-tree">
+                        
+                            
+                            
+                                <div class="local-toc"></div>
+                            
+                        
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="document">
+                        
+                            
+  <h1>Source code for drlpm.base.data_processing.indicators.indicator_loader</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">drlpm.base.data_processing.indicators.moving_averages</span> <span class="kn">import</span> <span class="n">MovingAverages</span>
+
+
+<span class="n">WINDOW_SIZES</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="IndicatorLoader"><a class="viewcode-back" href="../../../../../drlpm.base.data_processing.indicators.indicator_loader.html#drlpm.base.data_processing.indicators.indicator_loader.IndicatorLoader">[docs]</a><span class="k">class</span> <span class="nc">IndicatorLoader</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handles anything related to loading of technical indicator data.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IndicatorLoader.add_indicators"><a class="viewcode-back" href="../../../../../drlpm.base.data_processing.indicators.indicator_loader.html#drlpm.base.data_processing.indicators.indicator_loader.IndicatorLoader.add_indicators">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">add_indicators</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">stock_symbols</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds technical indicators to given dataframe.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (pd.DataFrame): Dataframe consisting of Open, High, Low and Close values of stocks</span>
+<span class="sd">            stock_symbols (list(str)): Stock symbols of user defined stocks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">WINDOW_SIZES</span><span class="p">:</span>
+            <span class="n">MovingAverages</span><span class="o">.</span><span class="n">add_sma_window</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">stock_symbols</span><span class="o">=</span><span class="n">stock_symbols</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">window</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully added sma_</span><span class="si">{</span><span class="n">window</span><span class="si">}</span><span class="s2"> to data.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">WINDOW_SIZES</span><span class="p">:</span>
+            <span class="n">MovingAverages</span><span class="o">.</span><span class="n">add_ema_window</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">stock_symbols</span><span class="o">=</span><span class="n">stock_symbols</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">window</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully added ema_</span><span class="si">{</span><span class="n">window</span><span class="si">}</span><span class="s2"> to data.&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'2.0',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+    <script type="text/javascript" src="../../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../../_static/sphinx_highlight.js"></script>
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+    <div class="footer" role="contentinfo">
+        <div class="container">
+            &#169; Copyright 2024, Julian Blanke.
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.
+        </div>
+    </div>  
+
+</body>
+</html>

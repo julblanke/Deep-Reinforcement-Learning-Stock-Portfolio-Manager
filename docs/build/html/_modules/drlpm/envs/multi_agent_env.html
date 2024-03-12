@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>drlpm.envs.multi_agent_env &mdash; Deep-Reinforcement-Learning-Stock-Portfolio-Manager 2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.min.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a class="site-nav-toggle hidden-lg-up"><i class="icon-menu"></i></a>
+            <a class="site-title" href="../../../index.html">
+                Deep-Reinforcement-Learning-Stock-Portfolio-Manager
+            </a>
+        </div>
+    </header>
+
+
+<div class="breadcrumbs-outer hidden-xs-down">
+    <div class="container">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a></li>
+        
+          <li><a href="../../index.html">Module code</a></li>
+        
+      <li>drlpm.envs.multi_agent_env</li>
+    
+    
+      <li class="breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+</div>
+    </div>
+</div>
+    <div class="main-outer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-3 site-nav">
+                    
+<div role="search">
+    <form class="search" action="../../../search.html" method="get">
+        <div class="icon-input">
+            <input type="text" name="q" placeholder="Search" />
+            <span class="icon-search"></span>
+        </div>
+        <input type="submit" value="Go" class="d-hidden" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+                    <div class="site-nav-tree">
+                        
+                            
+                            
+                                <div class="local-toc"></div>
+                            
+                        
+                    </div>
+                </div>
+                <div class="col-12 col-lg-9">
+                    <div class="document">
+                        
+                            
+  <h1>Source code for drlpm.envs.multi_agent_env</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ray.rllib</span> <span class="kn">import</span> <span class="n">MultiAgentEnv</span>
+<span class="kn">from</span> <span class="nn">gymnasium.spaces</span> <span class="kn">import</span> <span class="n">Box</span><span class="p">,</span> <span class="n">Dict</span>
+
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv">[docs]</a><span class="k">class</span> <span class="nc">MultiAgentStockTradingEnv</span><span class="p">(</span><span class="n">MultiAgentEnv</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi Agent RL Environment for stock trading portfolio manager.</span>
+
+<span class="sd">    Currently, the environment tracks cash, portfolio value, number of shares per stock and a total capital.</span>
+<span class="sd">    The environment takes as input these parameters for every agent individually as well as an observation per time step</span>
+<span class="sd">    consisting of the Open, High, Low and Close values of every stock given, their respective sma and ema with window</span>
+<span class="sd">    size of 20, 50, 100, 200 and the following list of indices:</span>
+<span class="sd">    [&quot;SPY&quot;, &quot;QQQ&quot;, &quot;SMH&quot;, &quot;XLV&quot;, &quot;XLP&quot;, &quot;XLE&quot;, &quot;XLF&quot;, &quot;XLI&quot;, &quot;XLU&quot;, &quot;XLB&quot;, &quot;XLK&quot;, &quot;KRE&quot;]</span>
+
+<span class="sd">    A continuous action vector of shape [1, 2 * nr_stocks] with values having a range of [0, 1] represents</span>
+<span class="sd">    the buy and sell action of every stock (e.g. [AAPL_buy, AAPL_sell, MSFT_buy, MSFT_sell] for AAPL and MSFT)</span>
+<span class="sd">    for every agent.</span>
+<span class="sd">    The buy factor in range [0, 1] decides, how much money of the current cash is used to buy the respective stock.</span>
+<span class="sd">    The sell factor in range [0, 1] decides, how much money of the current investment in the respective stock is sold.</span>
+<span class="sd">    E.g.: If action vector for [AAPL_buy, AAPL_sell, MSFT_buy, MSFT_sell] is [0.5, 0, 0.25, 0.5]:</span>
+<span class="sd">            1) All the stocks buy factors will be added together and nothing will happen if sum is above 1.</span>
+<span class="sd">               Reason being, that the cash will not be updated after every buy of a stock since this leads to</span>
+<span class="sd">               higher weight on the first stock that gets processed because of a reducing cash amount the further</span>
+<span class="sd">               we continue the buy actions (because: buy_amount_stock = buy_factor_stock * cash).</span>
+<span class="sd">            2) 0% of owned stocks in AAPL will be sold</span>
+<span class="sd">            3) 50% of owned stocks of MSFT will be sold; money will instantly be added to cash</span>
+<span class="sd">            4) If sum of factors are below or equal 1, every stock will buy with the respective buy factor on the</span>
+<span class="sd">               total cash available during the time step. Hence, 0.5 * cash will flow into AAPL and 0.25 * cash will</span>
+<span class="sd">               flow into MSFT. Afterward, cash is updated, and we are left with 0.25% of the previous cash.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv.__init__"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_config (dict):</span>
+<span class="sd">                data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices</span>
+<span class="sd">                stock_symbols (list(str)): Stock symbols of user defined stocks</span>
+<span class="sd">                initial_balance (float): Initial account balance</span>
+<span class="sd">                agent_ids (list): Names of agents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># static</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">env_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stock_symbols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stock_symbols&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;initial_balance&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_stock_symbols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stock_symbols&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;agent_ids&quot;</span><span class="p">]</span>
+        <span class="c1"># define spaces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_stock_symbols</span><span class="p">),</span>
+                                <span class="n">high</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_stock_symbols</span><span class="p">),</span>
+                                <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c1"># NOTE: obs dim given by portfolio values (3) + positions per stock (nr_stocks) + data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_space_in_preferred_format</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">observation_dim</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_stock_symbols</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observation_space</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">({</span><span class="n">agent</span><span class="p">:</span> <span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">observation_dim</span><span class="p">))</span>
+                                      <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">})</span>
+
+        <span class="c1"># initial values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">portfolio_value</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cash</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="nb">dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">agent</span><span class="p">,</span> <span class="n">dict_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">stock</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stock_symbols</span><span class="p">:</span>
+                <span class="n">dict_</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_step</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_sequence</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_state_memory</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv.reset"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Environment reset function.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            seed (int): Random integer for reproducibility -- not used in this env</span>
+<span class="sd">            options (dict): Additional information to specify how the environment is reset -- not used in this env</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            observations (dict): Portfolio parameters + stocks Open, High, Low and Close values for every agent</span>
+<span class="sd">            infos (dict): Currently empty dict for every agent -- applied due to signature</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_step</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># reset envs parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">portfolio_value</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cash</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_state_memory</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_balance</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="nb">dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">agent</span><span class="p">,</span> <span class="n">dict_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">stock</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stock_symbols</span><span class="p">:</span>
+                <span class="n">dict_</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">observations</span><span class="p">,</span> <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_obs</span><span class="p">()</span>
+        <span class="n">infos</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">observations</span><span class="p">,</span> <span class="n">infos</span></div>
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv.step"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;RL step function.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            action_dict (dict): Action vector in continuous space of dim [2 * nr_stocks, 1] in range [0, 1]</span>
+<span class="sd">                                as dict for every agent -- key: agent_id, value: action_vector</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            observations (dict): Portfolio parameters + stocks Open, High, Low and Close values</span>
+<span class="sd">            rewards (dict): Reward; given by Total value minus previous step Total value</span>
+<span class="sd">            terminateds (dict): Bool if env hits defined termination condition</span>
+<span class="sd">            truncateds (dict): Bool if env is terminated by externally defined condition</span>
+<span class="sd">            infos (dict): Contains information about portfolio values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get current share prices</span>
+        <span class="n">observations</span><span class="p">,</span> <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_obs</span><span class="p">()</span>
+        <span class="n">current_share_price_all_stocks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">stock</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stock_symbols</span><span class="p">:</span>
+            <span class="n">current_share_price_all_stocks</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Close_</span><span class="si">{</span><span class="n">stock</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]))</span>
+
+        <span class="c1"># take actions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_take_action</span><span class="p">(</span><span class="n">action_dict</span><span class="o">=</span><span class="n">action_dict</span><span class="p">,</span>
+                          <span class="n">current_share_price_all_stocks</span><span class="o">=</span><span class="n">current_share_price_all_stocks</span><span class="p">,</span>
+                          <span class="n">stock_symbols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stock_symbols</span><span class="p">)</span>
+
+        <span class="c1"># define reward function</span>
+        <span class="n">rewards</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_state_memory</span><span class="p">[</span><span class="n">agent</span><span class="p">])</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_state_memory</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+
+        <span class="c1"># define &quot;terminateds&quot;</span>
+        <span class="n">terminateds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_step</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">terminateds</span><span class="p">[</span><span class="s2">&quot;__all__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">terminateds</span><span class="p">[</span><span class="s2">&quot;__all__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># define &quot;truncateds&quot;</span>
+        <span class="n">truncateds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__all__&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+        <span class="c1"># define &quot;info&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="n">agent</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">agent</span><span class="p">],</span>
+            <span class="s2">&quot;portfolio&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">portfolio_value</span><span class="p">[</span><span class="n">agent</span><span class="p">],</span>
+            <span class="s2">&quot;cash&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">],</span>
+            <span class="s2">&quot;stocks&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">}</span>
+
+        <span class="c1"># update episode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">observations</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">terminateds</span><span class="p">,</span> <span class="n">truncateds</span><span class="p">,</span> <span class="n">info</span></div>
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv.render"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Render function.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv._take_action"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv._take_action">[docs]</a>    <span class="k">def</span> <span class="nf">_take_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">current_share_price_all_stocks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">stock_symbols</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Acts on the continuous action vector to buy and sell positions and update portfolio values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            action_dict (dict): Action vector in continuous space of dim [2 * nr_stocks, 1] in range [0, 1]</span>
+<span class="sd">                            as dict for every agent -- key: agent_id, value: action_vector</span>
+<span class="sd">            current_share_price_all_stocks (dict): Current share price of given stocks</span>
+<span class="sd">            stock_symbols (list): Stock symbols of user defined stocks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">:</span>
+            <span class="c1"># check if buying and selling exceeds capital by sum current sell price and compare to sum of buy prices</span>
+            <span class="n">sell_values_action_vector</span> <span class="o">=</span> <span class="n">action_dict</span><span class="p">[</span><span class="n">agent</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">buy_values_action_vector</span> <span class="o">=</span> <span class="n">action_dict</span><span class="p">[</span><span class="n">agent</span><span class="p">][::</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="c1"># create dicts for easier access</span>
+            <span class="n">sell_values_action_vector_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">buy_values_action_vector_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stock_symbols</span><span class="p">)):</span>
+                <span class="n">sell_values_action_vector_dict</span><span class="p">[</span><span class="n">stock_symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sell_values_action_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">buy_values_action_vector_dict</span><span class="p">[</span><span class="n">stock_symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">buy_values_action_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="c1"># sum sell power</span>
+            <span class="n">total_sell_capital</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">stock</span><span class="p">,</span> <span class="n">n_shares</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">sell_capital_stock</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_share_price_all_stocks</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_shares</span> <span class="o">*</span>
+                                      <span class="n">sell_values_action_vector_dict</span><span class="p">[</span><span class="n">stock</span><span class="p">])</span>
+                <span class="n">total_sell_capital</span> <span class="o">+=</span> <span class="n">sell_capital_stock</span>
+            <span class="n">potential_buy_capital</span> <span class="o">=</span> <span class="n">total_sell_capital</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span>
+
+            <span class="c1"># total necessary buy capital</span>
+            <span class="n">necessary_buy_capital</span> <span class="o">=</span> <span class="n">potential_buy_capital</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">buy_values_action_vector</span><span class="p">)</span>
+
+            <span class="c1"># define actual action step</span>
+            <span class="k">if</span> <span class="n">necessary_buy_capital</span> <span class="o">&gt;</span> <span class="n">potential_buy_capital</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># sell shares</span>
+                <span class="k">for</span> <span class="n">stock</span><span class="p">,</span> <span class="n">n_shares</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">amount_invested</span> <span class="o">=</span> <span class="n">current_share_price_all_stocks</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_shares</span>
+                    <span class="n">sell_amount</span> <span class="o">=</span> <span class="n">amount_invested</span> <span class="o">*</span> <span class="n">sell_values_action_vector_dict</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span>
+                    <span class="n">new_amount_invested</span> <span class="o">=</span> <span class="n">amount_invested</span> <span class="o">-</span> <span class="n">sell_amount</span>
+                    <span class="n">new_share_amount</span> <span class="o">=</span> <span class="n">new_amount_invested</span> <span class="o">/</span> <span class="n">current_share_price_all_stocks</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">][</span><span class="n">stock</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_share_amount</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sell_amount</span>
+
+                <span class="c1"># buy shares</span>
+                <span class="k">for</span> <span class="n">stock</span><span class="p">,</span> <span class="n">n_shares</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">buy_amount</span> <span class="o">=</span> <span class="n">buy_values_action_vector_dict</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span>
+                    <span class="n">new_n_shares</span> <span class="o">=</span> <span class="n">n_shares</span> <span class="o">+</span> <span class="n">buy_amount</span> <span class="o">/</span> <span class="n">current_share_price_all_stocks</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">][</span><span class="n">stock</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_n_shares</span>
+
+                <span class="c1"># update cash after buying</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="o">-=</span> <span class="n">necessary_buy_capital</span>
+
+            <span class="c1"># update portfolio values</span>
+            <span class="n">total_portfolio_value</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">stock</span><span class="p">,</span> <span class="n">n_shares</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">total_portfolio_value</span> <span class="o">+=</span> <span class="n">current_share_price_all_stocks</span><span class="p">[</span><span class="n">stock</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_shares</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">portfolio_value</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_portfolio_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_portfolio_value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="MultiAgentStockTradingEnv._get_obs"><a class="viewcode-back" href="../../../drlpm.envs.multi_agent_env.html#drlpm.envs.multi_agent_env.MultiAgentStockTradingEnv._get_obs">[docs]</a>    <span class="k">def</span> <span class="nf">_get_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns observations and sequence based on current time step.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            observations (dict): Current observation -- portfolio parameters + stocks Open, High, Low and Close values</span>
+<span class="sd">                                 as dict for every agent -- key: agent_id, value: observation (np.ndarray)</span>
+<span class="sd">            sequence (np.ndarray): Current Open, High, Low and Close values of stocks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_step</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">sequence_flattened</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_step</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">observations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_ids</span><span class="p">:</span>
+            <span class="n">general_info</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">agent</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">portfolio_value</span><span class="p">[</span><span class="n">agent</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cash</span><span class="p">[</span><span class="n">agent</span><span class="p">]]</span>
+                                    <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owned_stocks</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">general_info</span><span class="p">,</span> <span class="n">sequence_flattened</span><span class="p">])</span>
+            <span class="n">observations</span><span class="p">[</span><span class="n">agent</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">observations</span><span class="p">,</span> <span class="n">sequence</span></div></div>
+</pre></div>
+
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.0',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/sphinx_highlight.js"></script>
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+    <div class="footer" role="contentinfo">
+        <div class="container">
+            &#169; Copyright 2024, Julian Blanke.
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 6.2.1.
+        </div>
+    </div>  
+
+</body>
+</html>
