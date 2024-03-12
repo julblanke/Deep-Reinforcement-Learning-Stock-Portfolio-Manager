@@ -34,7 +34,7 @@ class Dataloader:
         """Calls the respective dataloader to get dataframe. Drops nan values due to indicators.
 
         Returns:
-            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators
+            data (pd.DataFrame): Data of given stocks -- includes OHLC data and indicators and indices
         """
         self.logger.info("Loading stock data from yfinance..")
         data = StockLoader.get_stock_data(stock_symbols=self.stock_symbols,
