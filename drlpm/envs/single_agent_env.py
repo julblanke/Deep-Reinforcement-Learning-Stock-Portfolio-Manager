@@ -96,7 +96,7 @@ class SingleAgentStockTradingEnv(gym.Env):
         """RL step function.
 
         Args:
-            action_vector (np.array): Action vector in continuous space of dim [2 * nr_stocks, 1] in range [0, 1]
+            action_dict (dict): Action vector in continuous space of dim [1, 2 * nr_stocks] in range [0, 1]
 
         Returns:
             observation (np.ndarray): Portfolio parameters + stocks Open, High, Low and Close values
@@ -150,7 +150,7 @@ class SingleAgentStockTradingEnv(gym.Env):
         """Acts on the continuous action vector to buy and sell positions and update portfolio values.
 
         Args:
-            action_vector (np.array): Action vector in continuous space of dim [2 * nr_stocks, 1] in range [0, 1]
+            action_dict (dict): Action vector in continuous space of dim [1, 2 * nr_stocks] in range [0, 1]
             current_share_price_all_stocks (dict): Current share price of given stocks
             stock_symbols (list): Stock symbols of user defined stocks
         """
