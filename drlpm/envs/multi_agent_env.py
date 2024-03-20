@@ -106,7 +106,7 @@ class MultiAgentStockTradingEnv(MultiAgentEnv):
         """RL step function.
 
         Args:
-            action_dict (dict): Action vector in continuous space of dim [2 * nr_stocks, 1] in range [0, 1]
+            action_dict (dict): Action vector in continuous space of dim [1, 2 * nr_stocks] in range [0, 1]
                                 as dict for every agent -- key: agent_id, value: action_vector
 
         Returns:
@@ -162,8 +162,8 @@ class MultiAgentStockTradingEnv(MultiAgentEnv):
         """Acts on the continuous action vector to buy and sell positions and update portfolio values.
 
         Args:
-            action_dict (dict): Action vector in continuous space of dim [2 * nr_stocks, 1] in range [0, 1]
-                            as dict for every agent -- key: agent_id, value: action_vector
+            action_dict (dict): Action vector in continuous space of dim [1, 2 * nr_stocks] in range [0, 1]
+                                as dict for every agent -- key: agent_id, value: action_vector
             current_share_price_all_stocks (dict): Current share price of given stocks
             stock_symbols (list): Stock symbols of user defined stocks
         """
